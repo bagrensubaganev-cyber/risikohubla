@@ -1,0 +1,6 @@
+
+{
+  "name": "RisikoHubla - Profil Risiko DJPL",
+  "description": "Aplikasi manajemen profil risiko digital Direktorat Jenderal Perhubungan Laut dengan integrasi Google Sheets dan analisis AI.",
+  "requestFramePermissions": []
+}
