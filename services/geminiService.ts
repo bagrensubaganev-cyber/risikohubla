@@ -5,7 +5,7 @@ import { RiskProfileSubmission } from "../types";
 
 // Fix: Updated parameter type to RiskProfileSubmission[]
 export const getAIAnalysis = async (submissions: RiskProfileSubmission[]) => {
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
+  const ai = new GoogleGenAI({ apiKey: import.meta.env.VITE_API_KEY });
   
   // Fix: Map over the entire submission object since 'selections' property does not exist on RiskProfileSubmission
   const summary = submissions.map(s => JSON.stringify(s)).join("\n");
