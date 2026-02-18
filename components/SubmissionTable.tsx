@@ -2,7 +2,7 @@
 import React from 'react';
 import { RiskProfileSubmission } from '../types';
 import * as XLSX from 'xlsx';
-import { Download, FileText, Edit3, Trash2, CloudCheck, Clock } from 'lucide-react';
+import { Download, FileText, Edit3, Trash2, CheckCircle, Clock } from 'lucide-react';
 
 interface Props {
   submissions: RiskProfileSubmission[];
