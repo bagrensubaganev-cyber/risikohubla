@@ -19,7 +19,8 @@ import {
   FileSpreadsheet,
   FileText,
   X,
-  Database
+  Database,
+  CheckCircle2
 } from 'lucide-react';
 import { SpreadsheetData, RiskProfileSubmission } from './types';
 import { fetchSheetData, extractOptions, getValByHeader } from './services/spreadsheetService';
@@ -27,7 +28,9 @@ import AdvancedDropdown from './components/AdvancedDropdown';
 import SubmissionTable from './components/SubmissionTable';
 import * as XLSX from 'xlsx';
 
+// --- CONFIGURASI SERAGAM (Ubah di sini jika ada update) ---
 const DEFAULT_SHEET = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit";
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_XXXXXXXXX/exec"; // Ganti dengan URL Apps Script Anda yang asli
 const TEMPLATE_PASSWORD = "123456";
 
 const RISK_MATRIX_SCORES = [
@@ -48,7 +51,7 @@ const getRiskLevelDetail = (score: number) => {
 
 const App: React.FC = () => {
   const [sheetUrl, setSheetUrl] = useState(DEFAULT_SHEET);
-  const [appsScriptUrl, setAppsScriptUrl] = useState(""); 
+  const [appsScriptUrl, setAppsScriptUrl] = useState(DEFAULT_APPS_SCRIPT_URL); 
   const [isConfiguring, setIsConfiguring] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [masterData, setMasterData] = useState<SpreadsheetData | null>(null);
@@ -93,15 +96,17 @@ const App: React.FC = () => {
   const [isSyncing, setIsSyncing] = useState(false);
 
   useEffect(() => {
-    const savedSheet = localStorage.getItem('sheet_url');
-    if (savedSheet) setSheetUrl(savedSheet);
+    // Inisialisasi data master
+    handleLoadData(DEFAULT_SHEET);
     
-    handleLoadData(savedSheet || DEFAULT_SHEET);
-    
+    // Load data lokal yang tersimpan
     const saved = localStorage.getItem('risk_profile_v11');
-    const savedUrl = localStorage.getItem('apps_script_url');
     if (saved) setSubmissions(JSON.parse(saved));
+    
+    // Selalu pastikan Apps Script URL menggunakan yang default jika tidak ada override khusus
+    const savedUrl = localStorage.getItem('apps_script_url');
     if (savedUrl) setAppsScriptUrl(savedUrl);
+    else setAppsScriptUrl(DEFAULT_APPS_SCRIPT_URL);
   }, []);
 
   const handleLoadData = async (url: string) => {
@@ -110,10 +115,9 @@ const App: React.FC = () => {
       const data = await fetchSheetData(url);
       setMasterData(data);
       localStorage.setItem('sheet_url', url);
-      setIsConfiguring(false);
     } catch (e) { 
       console.error(e); 
-      setLoginError("Gagal mengambil data dari spreadsheet.");
+      setLoginError("Gagal mengambil data dari spreadsheet master.");
     } finally { 
       setIsLoading(false); 
     }
@@ -292,9 +296,9 @@ const App: React.FC = () => {
       setSubmissions(updated);
       localStorage.setItem('risk_profile_v11', JSON.stringify(updated));
       setCurrentBatch([]);
-      alert("Sinkronisasi berhasil!");
+      alert("Sinkronisasi ke Cloud Berhasil!");
     } catch (e) { 
-      alert("Gagal sinkronisasi."); 
+      alert("Gagal sinkronisasi. Periksa koneksi atau URL Apps Script."); 
     } finally { 
       setIsSyncing(false); 
     }
@@ -327,7 +331,6 @@ const App: React.FC = () => {
 
   const unitOptions = useMemo(() => masterData ? extractOptions(masterData, 'Unit Kerja') : [], [masterData]);
   
-  // Menampilkan semua sasaran dari master data tanpa filter unit (Request User)
   const sasaranOptions = useMemo(() => {
     if (!masterData) return [];
     const uniqueSasaran = new Set<string>();
@@ -389,7 +392,7 @@ const App: React.FC = () => {
   const saveConfig = () => {
     localStorage.setItem('apps_script_url', appsScriptUrl);
     handleLoadData(sheetUrl);
-    alert("Konfigurasi disimpan!");
+    alert("Konfigurasi Sistem Diperbarui!");
     setIsConfiguring(false);
     setShowLoginSettings(false);
   };
@@ -412,29 +415,44 @@ const App: React.FC = () => {
             <div className="bg-gradient-to-br from-blue-600 to-blue-800 w-20 h-20 rounded-[2rem] flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-blue-200">
               <ShieldCheck className="text-white" size={40} />
             </div>
-            <h2 className="text-3xl font-black text-slate-900 tracking-tight">Portal Risiko</h2>
-            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Ditjen Perhubungan Laut</p>
+            <h2 className="text-3xl font-black text-slate-900 tracking-tight">RisikoHubla</h2>
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-[0.2em] mt-3">Portal Profil Risiko DJPL</p>
           </div>
 
           {showLoginSettings ? (
             <div className="space-y-6 animate-in fade-in duration-300">
               <div className="p-6 bg-blue-50/50 rounded-3xl border border-blue-100">
                 <h3 className="text-xs font-black text-blue-600 uppercase tracking-widest mb-4 flex items-center gap-2">
-                   <Database size={14} /> Spreadsheet Master
+                   <Database size={14} /> Integrasi Sistem (Admin)
                 </h3>
-                <input 
-                  type="text" 
-                  value={sheetUrl} 
-                  onChange={(e) => setSheetUrl(e.target.value)} 
-                  className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none mb-4 focus:border-blue-500" 
-                />
-                <button 
-                  onClick={() => handleLoadData(sheetUrl)} 
-                  disabled={isLoading} 
-                  className="w-full bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-700 transition-all"
-                >
-                  {isLoading ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />} Simpan & Sinkronkan
-                </button>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Spreadsheet Master URL</label>
+                    <input 
+                      type="text" 
+                      value={sheetUrl} 
+                      onChange={(e) => setSheetUrl(e.target.value)} 
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-500" 
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[9px] font-black text-slate-400 uppercase ml-1">Apps Script API URL</label>
+                    <input 
+                      type="text" 
+                      value={appsScriptUrl} 
+                      onChange={(e) => setAppsScriptUrl(e.target.value)} 
+                      className="w-full bg-white border border-slate-200 rounded-xl px-4 py-3 text-xs outline-none focus:border-blue-500" 
+                    />
+                  </div>
+                  <button 
+                    onClick={saveConfig} 
+                    disabled={isLoading} 
+                    className="w-full bg-blue-600 text-white py-3 rounded-xl text-[10px] font-black uppercase flex items-center justify-center gap-2 hover:bg-blue-700 transition-all"
+                  >
+                    {isLoading ? <Loader2 className="animate-spin" size={14} /> : <Save size={14} />} Simpan Konfigurasi
+                  </button>
+                  <p className="text-[9px] text-center text-slate-400 font-medium italic">Konfigurasi ini akan tersimpan secara seragam untuk sesi anda.</p>
+                </div>
               </div>
             </div>
           ) : (
@@ -477,6 +495,10 @@ const App: React.FC = () => {
               >
                 MASUK SISTEM
               </button>
+              
+              <div className="flex items-center justify-center gap-2 text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                 <CheckCircle2 size={12} className="text-emerald-400" /> Database Terkoneksi (Seragam)
+              </div>
             </form>
           )}
         </div>
@@ -488,7 +510,7 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-[#f8fafc] text-slate-700 antialiased font-['Inter',sans-serif]">
       {/* PRINT VIEW */}
       <div className="hidden print:block p-10 bg-white">
-        <h1 className="text-2xl font-bold mb-4 uppercase">Rekap Draft Profil Risiko</h1>
+        <h1 className="text-2xl font-bold mb-4 uppercase">Rekap Draft Profil Risiko - RisikoHubla</h1>
         <div className="grid grid-cols-2 gap-4 mb-8 text-sm">
            <p><strong>Unit Kerja:</strong> {unitKerja}</p>
            <p><strong>Tanggal Cetak:</strong> {new Date().toLocaleString('id-ID')}</p>
@@ -519,7 +541,7 @@ const App: React.FC = () => {
         <div className="flex items-center gap-4">
           <div className="bg-blue-600 p-2 rounded-xl shadow-lg"><ShieldCheck className="w-6 h-6 text-white" /></div>
           <div>
-            <h1 className="text-lg font-bold text-slate-900 leading-tight">Profil Risiko Digital</h1>
+            <h1 className="text-lg font-bold text-slate-900 leading-tight">RisikoHubla</h1>
             <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest bg-blue-50 px-3 py-0.5 rounded-full border border-blue-100">
               {unitKerja}
             </span>
@@ -530,7 +552,6 @@ const App: React.FC = () => {
             <button onClick={() => setActiveTab('form')} className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'form' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}>PENGISIAN</button>
             <button onClick={() => setActiveTab('monitor')} className={`px-6 py-2 rounded-lg text-xs font-bold transition-all ${activeTab === 'monitor' ? 'bg-white shadow-sm text-blue-600' : 'text-slate-500 hover:text-slate-800'}`}>DATABASE MONITOR</button>
           </div>
-          <button onClick={() => setIsConfiguring(!isConfiguring)} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-slate-400 hover:text-blue-600 transition-all"><Settings size={20} /></button>
           <button onClick={handleLogout} className="flex items-center gap-2 px-5 py-2.5 bg-rose-50 text-rose-500 border border-rose-100 rounded-xl text-xs font-black uppercase hover:bg-rose-500 hover:text-white transition-all">
             <LogOut size={16} /> Keluar
           </button>
@@ -538,24 +559,6 @@ const App: React.FC = () => {
       </nav>
 
       <main className="max-w-7xl mx-auto p-8 print:hidden">
-        {isConfiguring && (
-          <div className="bg-white border border-slate-200 p-8 rounded-3xl mb-10 shadow-xl animate-in slide-in-from-top-4">
-             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div>
-                   <h3 className="text-xs font-black mb-4 text-slate-400 uppercase tracking-widest">Spreadsheet Master</h3>
-                   <input type="text" value={sheetUrl} onChange={e => setSheetUrl(e.target.value)} className="w-full bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-sm focus:ring-4 focus:ring-blue-500/10 outline-none" />
-                </div>
-                <div>
-                   <h3 className="text-xs font-black mb-4 text-slate-400 uppercase tracking-widest">Apps Script API</h3>
-                   <div className="flex gap-2">
-                      <input type="text" value={appsScriptUrl} onChange={e => setAppsScriptUrl(e.target.value)} placeholder="https://script.google.com/..." className="flex-1 bg-slate-50 border border-slate-200 rounded-xl px-5 py-3 text-sm outline-none focus:ring-4 focus:ring-blue-500/10" />
-                      <button onClick={saveConfig} className="bg-slate-900 text-white px-8 py-3 rounded-xl text-xs font-bold uppercase hover:bg-black transition-all">Update</button>
-                   </div>
-                </div>
-             </div>
-          </div>
-        )}
-
         {activeTab === 'form' ? (
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
             <div className="lg:col-span-8 space-y-8">
