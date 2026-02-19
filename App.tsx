@@ -29,8 +29,8 @@ import SubmissionTable from './components/SubmissionTable';
 import * as XLSX from 'xlsx';
 
 // --- CONFIGURASI SERAGAM (Ubah di sini jika ada update) ---
-const DEFAULT_SHEET = "https://docs.google.com/spreadsheets/d/1BxiMVs0XRA5nFMdKvBdBZjgmUUqptlbs74OgvE2upms/edit";
-const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz_XXXXXXXXX/exec"; // Ganti dengan URL Apps Script Anda yang asli
+const DEFAULT_SHEET = "https://docs.google.com/spreadsheets/d/1B7HDiDeYgH-0HH-pmS2PTwNwbRyv--NltwncBFSSHGI/edit?gid=65972281#gid=65972281";
+const DEFAULT_APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbz1dtQLUCxztuKC0yHsRW-lddriC-iibjRC51lCzTEPN6Ro5d3LBzOc8ifEM92jU3dTNA/exec"; // 
 const TEMPLATE_PASSWORD = "123456";
 
 const RISK_MATRIX_SCORES = [
